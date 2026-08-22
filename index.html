@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="tg" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduGroups — Гуруҳҳои дарсӣ</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f1f5f9;
+      --bg2: #ffffff;
+      --bg3: #f8fafc;
+      --text: #0f172a;
+      --text2: #64748b;
+      --text3: #94a3b8;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #dbeafe;
+      --green: #16a34a;
+      --green-hover: #15803d;
+      --amber: #d97706;
+      --amber-soft: #fffbeb;
+      --amber-border: #fcd34d;
+      --red: #dc2626;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+      --msg-me: #2563eb;
+      --msg-other: #ffffff;
+      --header-bg: #ffffff;
+      --rank1: #facc15;
+      --rank2: #cbd5e1;
+      --rank3: #d97706;
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --bg2: #1e293b;
+      --bg3: #334155;
+      --text: #f1f5f9;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --border: #334155;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-soft: #1e3a5f;
+      --green: #22c55e;
+      --green-hover: #4ade80;
+      --amber: #f59e0b;
+      --amber-soft: #422006;
+      --amber-border: #b45309;
+      --red: #f87171;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+      --msg-me: #2563eb;
+      --msg-other: #334155;
+      --header-bg: #1e293b;
+      --rank1: #eab308;
+      --rank2: #64748b;
+      --rank3: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.25s, color 0.25s;
+    }
+    .hidden { display: none !important; }
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #1e40af 0%, #4f46e5 50%, #7c3aed 100%);
+      padding: 16px;
+      position: relative;
+    }
+    .theme-float { position: absolute; top: 16px; right: 16px; }
+    .login-box {
+      background: var(--bg2);
+      border-radius: 24px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    .logo {
+      width: 72px; height: 72px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      box-shadow: 0 8px 20px rgba(59,130,246,0.4);
+    }
+    .login-box h1 { font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .login-box .subtitle { color: var(--text2); margin-bottom: 28px; font-size: 14px; }
+    input, select, button { font: inherit; }
+    .login-box input {
+      width: 100%; padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 14px; font-size: 16px;
+      margin-bottom: 14px;
+      background: var(--bg); color: var(--text);
+    }
+    .login-box input:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 12px 20px; border: none;
+      border-radius: 12px; font-weight: 600; cursor: pointer;
+      transition: 0.15s; font-size: 14px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: var(--primary); color: white;
+      width: 100%; padding: 14px; font-size: 16px; border-radius: 14px;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover { background: var(--green-hover); }
+    .btn-amber { background: var(--amber); color: white; }
+    .btn-ghost { background: transparent; color: var(--text2); }
+    .btn-icon {
+      width: 40px; height: 40px; padding: 0; border-radius: 12px;
+      background: var(--bg3); color: var(--text);
+      border: 1px solid var(--border); font-size: 18px;
+    }
+    .btn-icon:hover { background: var(--primary-soft); }
+    .hint { font-size: 12px; color: var(--text3); margin-top: 18px; }
+    .hint b { color: var(--primary); }
+    #app-screen { display: flex; flex-direction: column; min-height: 100vh; }
+    header {
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 20;
+      box-shadow: var(--shadow);
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 18px; font-weight: 700; color: var(--primary); }
+    .user-info { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600;
+    }
+    .badge-admin { background: #fee2e2; color: #b91c1c; }
+    [data-theme="dark"] .badge-admin { background: #7f1d1d; color: #fca5a5; }
+    .badge-group { background: #fef3c7; color: #92400e; }
+    [data-theme="dark"] .badge-group { background: #78350f; color: #fcd34d; }
+    .badge-points {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white; font-weight: 700;
+    }
+    main { max-width: 960px; margin: 0 auto; padding: 20px 16px; width: 100%; }
+    .create-box {
+      background: var(--bg2); border-radius: 16px; padding: 18px;
+      margin-bottom: 20px; box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: end;
+    }
+    .create-box label {
+      display: block; font-size: 12px; color: var(--text2);
+      margin-bottom: 4px; font-weight: 500;
+    }
+    .create-box input, .create-box select {
+      padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 14px;
+      background: var(--bg); color: var(--text);
+    }
+    .create-box input:focus, .create-box select:focus {
+      outline: none; border-color: var(--primary);
+    }
+    .section-title {
+      font-size: 15px; font-weight: 600; color: var(--text2);
+      margin-bottom: 14px;
+    }
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .group-card {
+      background: var(--bg2); border-radius: 16px; padding: 18px;
+      border: 1.5px solid var(--border); cursor: pointer;
+      text-align: left; transition: 0.2s;
+    }
+    .group-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 8px 24px rgba(37,99,235,0.12);
+      transform: translateY(-2px);
+    }
+    .group-card .subject-tag {
+      font-size: 11px; background: var(--primary-soft); color: var(--primary);
+      padding: 3px 10px; border-radius: 999px; font-weight: 600;
+      display: inline-block; margin-bottom: 8px;
+    }
+    .group-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .group-card .meta {
+      font-size: 13px; color: var(--text2);
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .group-card .points-badge {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white; font-size: 12px; font-weight: 700;
+      padding: 2px 10px; border-radius: 999px;
+    }
+    .group-card .owner { font-size: 12px; color: var(--text3); margin-top: 8px; }
+    #chat-screen { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+    .chat-header {
+      background: var(--header-bg); border-bottom: 1px solid var(--border);
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow);
+    }
+    .chat-header .back {
+      color: var(--primary); font-weight: 600; cursor: pointer;
+      background: none; border: none; font-size: 15px;
+    }
+    .chat-header .info { flex: 1; min-width: 0; }
+    .chat-header h2 {
+      font-size: 16px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chat-header .sub {
+      font-size: 12px; color: var(--text2);
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .msg {
+      max-width: 78%; padding: 10px 14px; border-radius: 16px;
+      font-size: 14px; line-height: 1.45;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .msg.me {
+      align-self: flex-end; background: var(--msg-me); color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.other {
+      align-self: flex-start; background: var(--msg-other); color: var(--text);
+      box-shadow: var(--shadow); border-bottom-left-radius: 4px;
+    }
+    .msg.question {
+      align-self: flex-start; background: var(--amber-soft);
+      border: 1.5px solid var(--amber-border); color: var(--text);
+      max-width: 90%;
+    }
+    .msg.question .q-label {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700; color: var(--amber);
+      background: rgba(217,119,6,0.15); padding: 2px 8px;
+      border-radius: 6px; margin-bottom: 6px;
+    }
+    .msg .author { font-size: 11px; font-weight: 600; margin-bottom: 3px; opacity: 0.85; }
+    .msg .time { font-size: 10px; opacity: 0.55; margin-top: 4px; }
+    .admin-bar {
+      background: var(--amber-soft); border-top: 1px solid var(--amber-border);
+      padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .admin-bar input {
+      padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+      flex: 1; min-width: 120px; background: var(--bg2); color: var(--text);
+    }
+    .input-bar {
+      background: var(--header-bg); border-top: 1px solid var(--border);
+      padding: 10px 12px; display: flex; gap: 8px; align-items: center;
+    }
+    .input-bar input {
+      flex: 1; padding: 12px 14px; border: 1.5px solid var(--border);
+      border-radius: 14px; font-size: 15px; background: var(--bg); color: var(--text);
+    }
+    .input-bar input:focus { outline: none; border-color: var(--primary); }
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; padding: 16px; backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: var(--bg2); border-radius: 20px; width: 100%;
+      max-width: 400px; max-height: 80vh; overflow: hidden;
+      box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+    }
+    .modal-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h3 { font-size: 17px; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 22px; color: var(--text3); cursor: pointer; }
+    .modal-body { padding: 16px; overflow-y: auto; max-height: 60vh; }
+    .lb-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      background: var(--bg3); border-radius: 12px; margin-bottom: 8px;
+    }
+    .lb-rank {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; flex-shrink: 0;
+    }
+    .rank-1 { background: var(--rank1); color: #713f12; }
+    .rank-2 { background: var(--rank2); color: #1e293b; }
+    .rank-3 { background: var(--rank3); color: white; }
+    .rank-n { background: var(--border); color: var(--text2); }
+    .empty { text-align: center; color: var(--text3); padding: 48px 16px; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+    .status-dot { font-size: 10px; margin-left: 4px; }
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <div class="theme-float">
+      <button class="btn btn-icon" onclick="toggleTheme()" title="Равшан / Торик">🌓</button>
+    </div>
+    <div class="login-box">
+      <div class="logo">📚</div>
+      <h1>EduGroups</h1>
+      <p class="subtitle">Гуруҳҳои дарсӣ ва мусобиқа <span class="status-dot" id="conn-status">●</span></p>
+      <input id="username-input" type="text" placeholder="Номи акаунтро нависед..." autofocus />
+      <button class="btn btn-primary" onclick="login()">Ворид шудан</button>
+      <p class="hint">Админи асосӣ: <b>admin</b></p>
+    </div>
+  </div>
+
+  <div id="app-screen" class="hidden">
+    <header>
+      <div class="header-left">
+        <div class="header-logo">📚</div>
+        <h1>EduGroups</h1>
+      </div>
+      <div class="user-info">
+        <span id="current-user"></span>
+        <span id="admin-badge" class="badge badge-admin hidden">Админи асосӣ</span>
+        <button class="btn" style="padding:6px 12px;font-size:12px;background:var(--primary-soft);color:var(--primary)" onclick="showLeaderboard()">🏆 Мусобиқа</button>
+        <button class="btn btn-icon" onclick="toggleTheme()" title="Равшан / Торик">🌓</button>
+        <button class="btn btn-ghost" style="padding:6px 8px;font-size:12px" onclick="deleteAccount()">Нест кардан</button>
+      </div>
+    </header>
+    <main>
+      <div style="margin-bottom:16px">
+        <button class="btn btn-primary" style="width:auto;padding:12px 20px" onclick="toggleCreate()">+ Гуруҳи нав сохтан</button>
+      </div>
+      <div id="create-form" class="create-box hidden">
+        <div>
+          <label>Номи гуруҳ</label>
+          <input id="g-name" type="text" placeholder="Масалан: Python 101" />
+        </div>
+        <div>
+          <label>Фан</label>
+          <select id="g-subject"></select>
+        </div>
+        <button class="btn btn-green" onclick="createGroup()">Сохтан</button>
+        <button class="btn btn-ghost" onclick="toggleCreate()">Бекор</button>
+      </div>
+      <div class="section-title">📂 Гуруҳҳо</div>
+      <div id="groups-list" class="groups-grid"></div>
+      <div id="no-groups" class="empty hidden">
+        <div class="empty-icon">📭</div>
+        Ҳоло гуруҳе нест.<br>Аввалинро созед!
+      </div>
+    </main>
+  </div>
+
+  <div id="chat-screen" class="hidden">
+    <div class="chat-header">
+      <button class="back" onclick="closeChat()">← Бозгашт</button>
+      <div class="info">
+        <h2 id="chat-title"></h2>
+        <div class="sub" id="chat-sub"></div>
+      </div>
+      <span id="chat-admin-badge" class="badge badge-group hidden">Админ</span>
+      <button class="btn btn-icon" onclick="toggleTheme()" title="Равшан / Торик">🌓</button>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div id="admin-bar" class="admin-bar hidden">
+      <input id="admin-name" type="text" placeholder="Номи аъзо барои админ" />
+      <button class="btn btn-amber" style="padding:7px 12px;font-size:13px" onclick="addAdmin()">+ Админ</button>
+      <button class="btn btn-green" style="padding:7px 12px;font-size:13px" onclick="addPoints(10)">+10 балл</button>
+      <button class="btn btn-green" style="padding:7px 12px;font-size:13px" onclick="addPoints(50)">+50 балл</button>
+    </div>
+    <div class="input-bar">
+      <input id="msg-input" type="text" placeholder="Паём нависед..." onkeydown="if(event.key==='Enter')sendMsg()" />
+      <button id="btn-question" class="btn btn-amber hidden" style="padding:11px 14px" onclick="sendQuestion()" title="Савол">❓ Савол</button>
+      <button class="btn btn-primary" style="padding:11px 18px;width:auto" onclick="sendMsg()">Фиристодан</button>
+    </div>
+  </div>
+
+  <div id="lb-modal" class="modal-bg hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🏆 Рейтинги гуруҳҳо</h3>
+        <button class="modal-close" onclick="hideLeaderboard()">×</button>
+      </div>
+      <div class="modal-body" id="lb-body"></div>
+    </div>
+  </div>
+
+<script>
+  const socket = io();
+  let currentUser = null, currentGroup = null, subjects = [], groups = [];
+  function gid(g) { return g && (g.id || g._id); }
+  function norm(g) { if (!g) return g; g.id = g.id || g._id; return g; }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("eg_theme", next);
+  }
+  (function() {
+    document.documentElement.setAttribute("data-theme", localStorage.getItem("eg_theme") || "light");
+  })();
+
+  const statusEl = document.getElementById("conn-status");
+  socket.on("connect", () => { statusEl.style.color = "#22c55e"; });
+  socket.on("disconnect", () => { statusEl.style.color = "#ef4444"; });
+
+  socket.on("group_created", (g) => {
+    g = norm(g);
+    if (!groups.find(x => gid(x) === g.id)) { groups.push(g); renderGroups(); }
+  });
+  socket.on("new_message", (msg) => {
+    if (currentGroup && String(msg.groupId) === String(gid(currentGroup))) appendMessage(msg);
+  });
+  socket.on("group_updated", (g) => {
+    g = norm(g);
+    const idx = groups.findIndex(x => gid(x) === g.id);
+    if (idx >= 0) groups[idx] = g;
+    if (currentGroup && gid(currentGroup) === g.id) { currentGroup = g; updateChatSub(); }
+    renderGroups();
+  });
+
+  function login() {
+    const name = document.getElementById("username-input").value.trim();
+    if (name.length < 2) return alert("Ном бояд ҳадди ақал 2 ҳарф бошад");
+    socket.emit("login", { username: name }, (res) => {
+      if (res.error) return alert(res.error);
+      currentUser = res.user;
+      subjects = res.subjects || [];
+      groups = (res.groups || []).map(norm);
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("app-screen").classList.remove("hidden");
+      document.getElementById("current-user").textContent = currentUser.username;
+      if (currentUser.isMainAdmin) document.getElementById("admin-badge").classList.remove("hidden");
+      document.getElementById("g-subject").innerHTML = subjects.map(s => `<option>${s}</option>`).join("");
+      renderGroups();
+    });
+  }
+
+  function toggleCreate() { document.getElementById("create-form").classList.toggle("hidden"); }
+
+  function createGroup() {
+    const name = document.getElementById("g-name").value.trim();
+    const subject = document.getElementById("g-subject").value;
+    if (!name) return alert("Номи гуруҳро нависед");
+    socket.emit("create_group", { name, subject }, (res) => {
+      if (res.error) return alert(res.error);
+      document.getElementById("g-name").value = "";
+      toggleCreate();
+    });
+  }
+
+  function renderGroups() {
+    const container = document.getElementById("groups-list");
+    const empty = document.getElementById("no-groups");
+    if (groups.length === 0) { container.innerHTML = ""; empty.classList.remove("hidden"); return; }
+    empty.classList.add("hidden");
+    container.innerHTML = groups.map(g => `
+      <button class="group-card" onclick="openChat('${gid(g)}')">
+        <span class="subject-tag">${g.subject}</span>
+        <h3>${esc(g.name)}</h3>
+        <div class="meta">
+          <span>👥 ${g.members.length}</span>
+          <span class="points-badge">⭐ ${g.points} балл</span>
+        </div>
+        <div class="owner">Соҳиб: ${esc(g.owner)}</div>
+      </button>
+    `).join("");
+  }
+
+  function openChat(groupId) {
+    socket.emit("join_group", { groupId }, (res) => {
+      if (res.error) return alert(res.error);
+      currentGroup = norm(res.group);
+      document.getElementById("app-screen").classList.add("hidden");
+      document.getElementById("chat-screen").classList.remove("hidden");
+      document.getElementById("chat-title").textContent = currentGroup.name;
+      updateChatSub();
+      const isAdmin = currentGroup.admins.includes(currentUser.username) || currentUser.isMainAdmin;
+      document.getElementById("chat-admin-badge").classList.toggle("hidden", !isAdmin);
+      document.getElementById("admin-bar").classList.toggle("hidden", !isAdmin);
+      document.getElementById("btn-question").classList.toggle("hidden", !isAdmin);
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+      (res.messages || []).forEach(appendMessage);
+    });
+  }
+
+  function updateChatSub() {
+    if (!currentGroup) return;
+    document.getElementById("chat-sub").innerHTML =
+      `<span>${currentGroup.subject}</span> · <span>👥 ${currentGroup.members.length}</span> · <span class="badge badge-points">⭐ ${currentGroup.points} балл</span>`;
+  }
+
+  function closeChat() {
+    currentGroup = null;
+    document.getElementById("chat-screen").classList.add("hidden");
+    document.getElementById("app-screen").classList.remove("hidden");
+    renderGroups();
+  }
+
+  function appendMessage(m) {
+    const box = document.getElementById("messages");
+    const isMe = m.username === currentUser.username;
+    const isQ = m.type === "question";
+    const cls = isQ ? "msg question" : (isMe ? "msg me" : "msg other");
+    const div = document.createElement("div");
+    div.className = cls;
+    let body = isQ
+      ? `<div class="q-label">❓ Савол</div><div>${esc(m.text.replace(/^❓\\s*/, ""))}</div>`
+      : `<div>${esc(m.text)}</div>`;
+    div.innerHTML = `
+      <div class="author">${esc(m.username)}${m.isAdmin ? " 👑" : ""}</div>
+      ${body}
+      <div class="time">${new Date(m.createdAt).toLocaleTimeString("tg-TJ",{hour:"2-digit",minute:"2-digit"})}</div>
+    `;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sendMsg() {
+    const text = document.getElementById("msg-input").value.trim();
+    if (!text || !currentGroup) return;
+    socket.emit("send_message", { groupId: gid(currentGroup), text, type: "text" }, (res) => {
+      if (res.error) alert(res.error); else document.getElementById("msg-input").value = "";
+    });
+  }
+
+  function sendQuestion() {
+    const text = document.getElementById("msg-input").value.trim();
+    if (!text || !currentGroup) return;
+    socket.emit("send_message", { groupId: gid(currentGroup), text, type: "question" }, (res) => {
+      if (res.error) alert(res.error); else document.getElementById("msg-input").value = "";
+    });
+  }
+
+  function addAdmin() {
+    const name = document.getElementById("admin-name").value.trim();
+    if (!name || !currentGroup) return;
+    socket.emit("add_admin", { groupId: gid(currentGroup), username: name }, (res) => {
+      if (res.error) return alert(res.error);
+      alert(name + " ҳоло админ шуд!");
+      document.getElementById("admin-name").value = "";
+      currentGroup = norm(res.group);
+    });
+  }
+
+  function addPoints(pts) {
+    if (!currentGroup) return;
+    socket.emit("add_points", { groupId: gid(currentGroup), points: pts }, (res) => {
+      if (res.error) return alert(res.error);
+      alert("+" + pts + " балл илова шуд! ⭐");
+    });
+  }
+
+  function showLeaderboard() {
+    socket.emit("get_leaderboard", (res) => {
+      const list = res.leaderboard || [];
+      const body = document.getElementById("lb-body");
+      if (list.length === 0) {
+        body.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>Ҳоло балле нест</div>';
+      } else {
+        body.innerHTML = list.map((g, i) => `
+          <div class="lb-item">
+            <div class="lb-rank ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n'}">${i+1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700">${esc(g.name)}</div>
+              <div style="font-size:12px;color:var(--text2)">${g.subject} · ${g.members} аъзо</div>
+            </div>
+            <div style="font-weight:800;color:var(--primary);font-size:16px">⭐ ${g.points}</div>
+          </div>
+        `).join("");
+      }
+      document.getElementById("lb-modal").classList.remove("hidden");
+    });
+  }
+  function hideLeaderboard() { document.getElementById("lb-modal").classList.add("hidden"); }
+
+  function deleteAccount() {
+    if (!confirm("Аккаунти худро нест мекунед?")) return;
+    socket.emit("delete_account", (res) => {
+      if (res.success) {
+        currentUser = null; currentGroup = null;
+        document.getElementById("app-screen").classList.add("hidden");
+        document.getElementById("chat-screen").classList.add("hidden");
+        document.getElementById("login-screen").classList.remove("hidden");
+        document.getElementById("username-input").value = "";
+      }
+    });
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  document.getElementById("username-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") login();
+  });
+</script>
+</body>
+</html>
